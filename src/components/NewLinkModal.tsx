@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { HubLink, HubFolder, IconType } from '@/types';
 import { detectIconFromUrl, getCleanIcon } from '@/lib/icons';
-import { X, Check, Globe } from 'lucide-react';
+import { X, Check, Globe, Star } from 'lucide-react';
 
 interface NewLinkModalProps {
   isOpen: boolean;
@@ -29,6 +29,8 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
   const [iconType, setIconType] = useState<IconType>('generic');
   const [isPinned, setIsPinned] = useState(false);
 
+  const [isFetching, setIsFetching] = useState(false);
+
   useEffect(() => {
     if (linkToEdit) {
       setTitle(linkToEdit.title);
@@ -47,28 +49,38 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
     }
   }, [linkToEdit, isOpen, defaultFolderId, folders]);
 
-  if (!isOpen) return null;
+  const fetchMetadata = async (targetUrl: string) => {
+    if (!targetUrl.startsWith('http')) return;
+    setIsFetching(true);
+    try {
+      const res = await fetch(`/api/metadata?url=${encodeURIComponent(targetUrl)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.title && !title) setTitle(data.title);
+        if (data.description && !description) setDescription(data.description);
+      }
+    } catch (e) {
+      console.error('Failed to fetch metadata:', e);
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleUrlChange = (newUrl: string) => {
     setUrl(newUrl);
 
-    if (!linkToEdit && newUrl.trim().length > 3) {
-      const detected = detectIconFromUrl(newUrl);
-      setIconType(detected);
+    if (newUrl.trim().length > 3) {
+      setIconType(detectIconFromUrl(newUrl));
+    }
+  };
 
-      // Auto suggest title if empty
-      if (!title) {
-        try {
-          if (newUrl.includes('github.com/')) {
-            const parts = newUrl.split('github.com/')[1].split('/');
-            if (parts[0]) {
-              setTitle(parts[1] ? `${parts[0]}/${parts[1]}` : parts[0]);
-            }
-          }
-        } catch {
-          // ignore
-        }
+  const handleUrlBlur = () => {
+    if (!linkToEdit && url && !title) {
+      let formattedUrl = url.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
       }
+      fetchMetadata(formattedUrl);
     }
   };
 
@@ -96,17 +108,19 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
     onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div 
-        className="w-full max-w-md bg-[#16161a] rounded-2xl p-6 border border-white/10 shadow-2xl relative"
+        className="w-full max-w-md bg-[#111322] rounded-2xl p-6 border border-white/10 shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/5">
           <div className="flex items-center gap-2.5">
-            <div className="text-white/80">
-              {getCleanIcon(iconType, "w-5 h-5")}
+            <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center bg-white/5 p-1.5 shrink-0 overflow-hidden">
+              {getCleanIcon(iconType, "w-full h-full text-white/80", url)}
             </div>
             <h2 className="text-sm font-semibold text-white">
               {linkToEdit ? 'Editar recurso' : 'Nuevo recurso'}
@@ -121,47 +135,59 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[11px] font-medium text-white/50 mb-1">
-              URL del enlace *
-            </label>
+            <div className="flex justify-between items-end mb-1.5">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-indigo-300/80">
+                URL del enlace *
+              </label>
+              {!linkToEdit && url && (
+                <button 
+                  type="button" 
+                  onClick={() => handleUrlBlur()} 
+                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium bg-indigo-500/10 px-2 py-0.5 rounded flex items-center gap-1"
+                >
+                  {isFetching ? 'Buscando...' : '✨ Auto-completar'}
+                </button>
+              )}
+            </div>
             <input
               type="text"
               required
               autoFocus
-              placeholder="https://github.com/... o https://drive.google.com/..."
+              placeholder="Ej: https://github.com/..."
               value={url}
               onChange={(e) => handleUrlChange(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-xs font-mono transition-colors"
+              onBlur={handleUrlBlur}
+              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] text-sm font-mono transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-white/50 mb-1">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-indigo-300/80 mb-1.5">
               Nombre o Título *
             </label>
             <input
               type="text"
               required
-              placeholder="Ej: Repositorio Principal, Drive Contabilidad..."
+              placeholder="Ej: Repositorio Principal..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-xs transition-colors"
+              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] text-sm transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-white/50 mb-1">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-indigo-300/80 mb-1.5">
               Carpeta
             </label>
             <select
               value={folderId}
               onChange={(e) => setFolderId(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[#111114] border border-white/10 text-white focus:outline-none focus:border-white/30 text-xs"
+              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-indigo-500/50 text-sm transition-all appearance-none"
             >
               {folders.map((f) => (
-                <option key={f.id} value={f.id} className="bg-[#111114] text-white">
+                <option key={f.id} value={f.id} className="bg-[#111322] text-white">
                   📁 {f.name}
                 </option>
               ))}
@@ -169,44 +195,49 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-white/50 mb-1">
-              Nota o descripción (opcional)
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-indigo-300/80 mb-1.5">
+              Descripción (opcional)
             </label>
-            <input
-              type="text"
+            <textarea
               placeholder="Detalle breve..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-xs transition-colors"
+              rows={2}
+              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] text-sm transition-all resize-none"
             />
           </div>
 
-          <div className="pt-1">
-            <label className="flex items-center gap-2 text-xs text-white/70 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isPinned}
-                onChange={(e) => setIsPinned(e.target.checked)}
-                className="w-3.5 h-3.5 rounded bg-black/40 border-white/20 text-blue-500 focus:ring-0"
-              />
-              <span>Fijar en Favoritos</span>
+          <div className="pt-2">
+            <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer select-none group w-max">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={isPinned}
+                  onChange={(e) => setIsPinned(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="w-5 h-5 rounded bg-black/50 border border-white/10 peer-checked:bg-amber-400 peer-checked:border-amber-400 transition-all flex items-center justify-center">
+                  <Star className="w-3.5 h-3.5 text-[#111322] opacity-0 peer-checked:opacity-100 fill-current" />
+                </div>
+              </div>
+              <span className="group-hover:text-white transition-colors">Fijar en Favoritos</span>
             </label>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/5">
+          <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-white/5">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg text-xs text-white/60 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-white/90 transition-colors cursor-pointer"
+              className="px-6 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] transition-all cursor-pointer"
             >
-              {linkToEdit ? 'Guardar' : 'Agregar'}
+              {linkToEdit ? 'Guardar Cambios' : 'Agregar Recurso'}
             </button>
           </div>
         </form>

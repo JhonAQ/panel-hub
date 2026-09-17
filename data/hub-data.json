@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-09-17T06:16:54.411Z",
+  "lastUpdated": "2026-09-17T07:24:45.096Z",
   "folders": [
     {
       "id": "folder-repos",
@@ -41,9 +41,45 @@
       "iconName": "notion",
       "color": "amber",
       "order": 5
+    },
+    {
+      "id": "folder-1789629085780",
+      "name": "Carpeta de x motivo",
+      "description": "",
+      "color": "slate",
+      "iconName": "folder",
+      "order": 6
     }
   ],
   "links": [
+    {
+      "id": "link-1789629885081",
+      "title": "Ingresa.pe: Preparación para exámenes de admisión",
+      "url": "https://ingresa.pe",
+      "description": "IngresaPe (Ingresa.pe) es la plataforma preuniversitaria N°1 del Perú. Prepárate para exámenes de admisión (UNSA, UNMSM), Nombramiento Docente y ENAM con simulacros reales, IA y ranking en vivo.",
+      "folderId": "folder-repos",
+      "iconType": "generic",
+      "colorTheme": "cyan",
+      "isPinned": false,
+      "clickCount": 0,
+      "tags": [],
+      "createdAt": "2026-09-17T07:24:45.081Z",
+      "updatedAt": "2026-09-17T07:24:45.081Z"
+    },
+    {
+      "id": "link-1789628960609",
+      "title": "Ingresa.pd",
+      "url": "https://ingresa.pe",
+      "description": "",
+      "folderId": "folder-repos",
+      "iconType": "generic",
+      "colorTheme": "cyan",
+      "isPinned": true,
+      "clickCount": 0,
+      "tags": [],
+      "createdAt": "2026-09-17T07:09:20.609Z",
+      "updatedAt": "2026-09-17T07:09:20.609Z"
+    },
     {
       "id": "link-gh-1",
       "title": "PanelHub Core Repository",

@@ -9,6 +9,7 @@ import { CleanRow } from '@/components/CleanRow';
 import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewFolderModal } from '@/components/NewFolderModal';
 import { DataBackupModal } from '@/components/DataBackupModal';
+import { ShortcutsModal } from '@/components/ShortcutsModal';
 import { 
   Folder, 
   Plus, 
@@ -75,18 +76,10 @@ export default function HomePage() {
     loadData();
   }, []);
 
-  // Keyboard shortcut Cmd+N / Ctrl+N to open new link
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        setEditingLink(null);
-        setIsLinkModalOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+
+
 
   // Persist helper
   const persistData = async (newData: HubData) => {
@@ -127,8 +120,8 @@ export default function HomePage() {
     return hubData.links.filter((l) => l.folderId === folderId).length;
   };
 
-  // Filtered links
-  const filteredLinks = useMemo(() => {
+  // Displayed links
+  const displayedLinks = useMemo(() => {
     let result = hubData.links;
 
     // View filter
@@ -154,6 +147,111 @@ export default function HomePage() {
 
     return result;
   }, [hubData.links, selectedView, selectedFolderId, searchQuery, folderMap]);
+
+  // Reset selection when displayed links change
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [displayedLinks]);
+
+  // Keyboard Navigation (Vim-style)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInputFocused = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA' || activeEl?.tagName === 'SELECT';
+
+      if (isInputFocused) {
+        if (e.key === 'Escape') {
+          (activeEl as HTMLElement).blur();
+        }
+        return;
+      }
+
+      if (isLinkModalOpen || isFolderModalOpen || isBackupModalOpen || isShortcutsModalOpen) {
+        if (e.key === 'Escape') {
+          setIsLinkModalOpen(false);
+          setIsFolderModalOpen(false);
+          setIsBackupModalOpen(false);
+          setIsShortcutsModalOpen(false);
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+        case 'ArrowRight':
+        case 'l':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.min(prev + 1, displayedLinks.length - 1));
+          break;
+        case 'k':
+        case 'ArrowUp':
+        case 'ArrowLeft':
+        case 'h':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+        case 'o':
+          if (selectedIndex >= 0 && displayedLinks[selectedIndex]) {
+            handleOpenLink(displayedLinks[selectedIndex]);
+          }
+          break;
+        case 'f':
+          if (selectedIndex >= 0 && displayedLinks[selectedIndex]) {
+            handleTogglePin(displayedLinks[selectedIndex].id);
+          }
+          break;
+        case 'e':
+          e.preventDefault();
+          if (selectedIndex >= 0 && displayedLinks[selectedIndex]) {
+            setEditingLink(displayedLinks[selectedIndex]);
+            setIsLinkModalOpen(true);
+          }
+          break;
+        case 'Backspace':
+        case 'Delete':
+          if (selectedIndex >= 0 && displayedLinks[selectedIndex]) {
+            if (confirm(`¿Eliminar "${displayedLinks[selectedIndex].title}"?`)) {
+              handleDeleteLink(displayedLinks[selectedIndex].id);
+              setSelectedIndex((prev) => Math.max(prev - 1, 0));
+            }
+          }
+          break;
+        case 'i':
+        case 'a':
+          e.preventDefault();
+          setEditingLink(null);
+          setIsLinkModalOpen(true);
+          break;
+        case '/':
+          e.preventDefault();
+          const searchInput = document.querySelector<HTMLInputElement>('input[placeholder="Buscar enlaces..."]');
+          searchInput?.focus();
+          break;
+        case '?':
+          e.preventDefault();
+          setIsShortcutsModalOpen(true);
+          break;
+        case 'Escape':
+          setSelectedIndex(-1);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displayedLinks, selectedIndex, isLinkModalOpen, isFolderModalOpen, isBackupModalOpen, isShortcutsModalOpen]);
+
+  // Scroll active item into view
+  useEffect(() => {
+    if (selectedIndex >= 0 && displayedLinks[selectedIndex]) {
+      const el = document.getElementById(`link-${displayedLinks[selectedIndex].id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedIndex, displayedLinks]);
 
   // Handlers
   const handleOpenLink = (link: HubLink) => {
@@ -239,8 +337,10 @@ export default function HomePage() {
   const activeFolder = selectedFolderId ? folderMap.get(selectedFolderId) : null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0d0d10] text-[#f3f4f6]">
-      {/* macOS Sidebar */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#060814] text-[#f3f4f6] relative">
+      <div className="bg-glow-blobs" />
+      
+      {/* App Sidebar */}
       {sidebarOpen && (
         <MacSidebar
           folders={hubData.folders}
@@ -251,14 +351,8 @@ export default function HomePage() {
             setEditingLink(null);
             setIsLinkModalOpen(true);
           }}
-          onOpenNewFolder={() => {
-            setEditingFolder(null);
-            setIsFolderModalOpen(true);
-          }}
-          onEditFolder={(f) => {
-            setEditingFolder(f);
-            setIsFolderModalOpen(true);
-          }}
+          onCreateFolder={(name) => handleSaveFolder({ name })}
+          onEditFolder={(folder) => handleSaveFolder(folder)}
           onDeleteFolder={handleDeleteFolder}
           onOpenBackup={() => setIsBackupModalOpen(true)}
           totalLinksCount={hubData.links.length}
@@ -270,23 +364,23 @@ export default function HomePage() {
       )}
 
       {/* Main Workspace Canvas */}
-      <main className="flex-1 flex flex-col h-full min-w-0 bg-[#101014] overflow-hidden">
+      <main className="flex-1 flex flex-col h-full min-w-0 bg-transparent overflow-hidden">
         {/* Workspace Top Toolbar */}
-        <header className="h-12 border-b border-white/[0.05] px-6 flex items-center justify-between shrink-0 select-none bg-[#121216]">
+        <header className="h-20 border-b border-white/[0.04] px-8 flex items-center justify-between shrink-0 select-none bg-transparent z-10">
           {/* Breadcrumb / Title */}
-          <div className="flex items-center gap-2 text-xs min-w-0">
+          <div className="flex items-center gap-3 text-sm min-w-0">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 mr-1"
+              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 mr-1 transition-colors"
               title="Alternar barra lateral"
             >
-              <Menu className="w-4 h-4" />
+              <Menu className="w-5 h-5" />
             </button>
 
-            <span className="text-white/40">PanelHub</span>
-            <ChevronRight className="w-3.5 h-3.5 text-white/20" />
+            <span className="font-extrabold tracking-tight text-white/90 text-lg">PanelHub</span>
+            <span className="text-white/20 font-light text-xl">/</span>
             
-            <div className="flex items-center gap-1.5 font-medium text-white/90 truncate">
+            <div className="flex items-center gap-2 font-semibold text-indigo-200 truncate text-base">
               {selectedView === 'favorites' ? (
                 <>
                   <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
@@ -311,7 +405,7 @@ export default function HomePage() {
             </div>
 
             <span className="text-[11px] text-white/30 font-mono ml-1">
-              ({filteredLinks.length})
+              ({displayedLinks.length})
             </span>
           </div>
 
@@ -345,9 +439,9 @@ export default function HomePage() {
                 setEditingLink(null);
                 setIsLinkModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-white/90 transition-all cursor-pointer shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#6366f1] hover:bg-[#7c3aed] transition-all cursor-pointer shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(124,58,237,0.6)] group"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
               <span>Agregar</span>
             </button>
           </div>
@@ -355,7 +449,7 @@ export default function HomePage() {
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-8">
-          {filteredLinks.length === 0 ? (
+          {displayedLinks.length === 0 ? (
             /* Clean Empty State */
             <div className="h-64 flex flex-col items-center justify-center text-center">
               <p className="text-xs text-white/40 mb-3">
@@ -374,12 +468,13 @@ export default function HomePage() {
             </div>
           ) : viewMode === 'grid' ? (
             /* Minimalist Notion / macOS Grid View */
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-              {filteredLinks.map((link) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {displayedLinks.map((link, index) => (
                 <CleanCard
                   key={link.id}
                   link={link}
                   folder={folderMap.get(link.folderId)}
+                  isFocused={index === selectedIndex}
                   onOpen={handleOpenLink}
                   onTogglePin={handleTogglePin}
                   onEdit={(l) => {
@@ -393,11 +488,12 @@ export default function HomePage() {
           ) : (
             /* Clean Minimalist List View */
             <div className="max-w-4xl space-y-1">
-              {filteredLinks.map((link) => (
+              {displayedLinks.map((link, index) => (
                 <CleanRow
                   key={link.id}
                   link={link}
                   folder={folderMap.get(link.folderId)}
+                  isFocused={index === selectedIndex}
                   onOpen={handleOpenLink}
                   onTogglePin={handleTogglePin}
                   onEdit={(l) => {
@@ -442,6 +538,11 @@ export default function HomePage() {
         onImportData={persistData}
         onResetData={() => persistData(INITIAL_HUB_DATA)}
         syncStatus={syncStatus}
+      />
+
+      <ShortcutsModal 
+        isOpen={isShortcutsModalOpen}
+        onClose={() => setIsShortcutsModalOpen(false)}
       />
     </div>
   );

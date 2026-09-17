@@ -50,7 +50,7 @@ export const YoutubeSvg = ({ className = "w-5 h-5" }: { className?: string }) =>
   </svg>
 );
 
-export function getCleanIcon(iconType: IconType, className = "w-5 h-5") {
+export function getCleanIcon(iconType: IconType, className = "w-5 h-5", url?: string) {
   switch (iconType) {
     case 'github':
       return <GithubSvg className={className} />;
@@ -77,6 +77,23 @@ export function getCleanIcon(iconType: IconType, className = "w-5 h-5") {
     case 'code':
       return <Code className={className} />;
     default:
+      if (url) {
+        const domain = extractDomain(url);
+        if (domain && domain !== url) {
+          return (
+            <img 
+              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`} 
+              alt="Favicon" 
+              className={`${className} object-contain rounded-sm`} 
+              onError={(e) => {
+                // Fallback to Globe if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          );
+        }
+      }
       return <Globe className={className} />;
   }
 }
