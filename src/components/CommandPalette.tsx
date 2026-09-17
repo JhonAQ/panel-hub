@@ -170,6 +170,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <Search className="w-5 h-5 text-indigo-400 mr-3" />
           <input
             ref={inputRef}
+            autoFocus
             type="text"
             placeholder="Buscar enlaces, comandos, carpetas..."
             value={query}

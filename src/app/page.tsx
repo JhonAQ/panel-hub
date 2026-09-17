@@ -91,15 +91,7 @@ export default function HomePage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
-        if (e.key.toLowerCase() === 'n') {
-          e.preventDefault();
-          if (e.shiftKey) {
-            window.dispatchEvent(new CustomEvent('open-new-folder'));
-          } else {
-            setEditingLink(null);
-            setIsLinkModalOpen(true);
-          }
-        } else if (e.key.toLowerCase() === 'k') {
+        if (e.key.toLowerCase() === 'k') {
           e.preventDefault();
           setIsCommandPaletteOpen(true);
         }
@@ -213,22 +205,33 @@ export default function HomePage() {
         return;
       }
 
-      switch (e.key) {
+      const cols = viewMode === 'list' ? 1 : (window.innerWidth >= 1280 ? 4 : (window.innerWidth >= 1024 ? 3 : (window.innerWidth >= 640 ? 2 : 1)));
+      switch (e.key.toLowerCase()) {
         case 'j':
-        case 'ArrowDown':
-        case 'ArrowRight':
+        case 'arrowdown':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.min((prev < 0 ? 0 : prev) + cols, displayedLinks.length - 1));
+          break;
+        case 'k':
+        case 'arrowup':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.max((prev < 0 ? 0 : prev) - cols, 0));
+          break;
         case 'l':
+        case 'arrowright':
           e.preventDefault();
           setSelectedIndex((prev) => Math.min(prev + 1, displayedLinks.length - 1));
           break;
-        case 'k':
-        case 'ArrowUp':
-        case 'ArrowLeft':
         case 'h':
+        case 'arrowleft':
           e.preventDefault();
           setSelectedIndex((prev) => Math.max(prev - 1, 0));
           break;
-        case 'Enter':
+        case 'c':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('open-new-folder'));
+          break;
+        case 'enter':
         case 'o':
           if (selectedIndex >= 0 && displayedLinks[selectedIndex]) {
             handleOpenLink(displayedLinks[selectedIndex]);
@@ -246,8 +249,8 @@ export default function HomePage() {
             setIsLinkModalOpen(true);
           }
           break;
-        case 'Backspace':
-        case 'Delete':
+        case 'backspace':
+        case 'delete':
           if (selectedIndex >= 0 && displayedLinks[selectedIndex]) {
             if (confirm(`¿Eliminar "${displayedLinks[selectedIndex].title}"?`)) {
               handleDeleteLink(displayedLinks[selectedIndex].id);
@@ -269,7 +272,7 @@ export default function HomePage() {
           e.preventDefault();
           setIsShortcutsModalOpen(true);
           break;
-        case 'Escape':
+        case 'escape':
           setSelectedIndex(-1);
           break;
       }
