@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-09-17T07:25:15.545Z",
+  "lastUpdated": "2026-09-17T07:35:56.632Z",
   "folders": [
     {
       "id": "folder-repos",
@@ -53,6 +53,20 @@
   ],
   "links": [
     {
+      "id": "link-1789630543583",
+      "title": "Facebook",
+      "url": "https://facebook.com",
+      "description": "",
+      "folderId": "folder-repos",
+      "iconType": "generic",
+      "colorTheme": "cyan",
+      "isPinned": false,
+      "clickCount": 0,
+      "tags": [],
+      "createdAt": "2026-09-17T07:35:43.583Z",
+      "updatedAt": "2026-09-17T07:35:43.583Z"
+    },
+    {
       "id": "link-1789629885081",
       "title": "Ingresa.pe: Preparación para exámenes de admisión",
       "url": "https://ingresa.pe",
@@ -61,7 +75,7 @@
       "iconType": "generic",
       "colorTheme": "cyan",
       "isPinned": false,
-      "clickCount": 0,
+      "clickCount": 1,
       "tags": [],
       "createdAt": "2026-09-17T07:24:45.081Z",
       "updatedAt": "2026-09-17T07:24:45.081Z"
@@ -107,7 +121,7 @@
       "iconType": "drive",
       "colorTheme": "emerald",
       "isPinned": true,
-      "clickCount": 28,
+      "clickCount": 29,
       "tags": [
         "drive",
         "cloud",
@@ -125,7 +139,7 @@
       "iconType": "vercel",
       "colorTheme": "cyan",
       "isPinned": true,
-      "clickCount": 20,
+      "clickCount": 21,
       "tags": [
         "deploy",
         "cloud",
@@ -161,7 +175,7 @@
       "iconType": "figma",
       "colorTheme": "rose",
       "isPinned": false,
-      "clickCount": 15,
+      "clickCount": 16,
       "tags": [
         "ui",
         "ux",
