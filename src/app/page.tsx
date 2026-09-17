@@ -42,7 +42,7 @@ export default function HomePage() {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(true);
   const [editingLink, setEditingLink] = useState<HubLink | null>(null);
   const [editingFolder, setEditingFolder] = useState<HubFolder | null>(null);
 
@@ -77,10 +77,30 @@ export default function HomePage() {
     loadData();
   }, []);
 
+  // Global Keyboard Shortcuts (Cmd+N, Cmd+Shift+N, Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key.toLowerCase() === 'n') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            window.dispatchEvent(new CustomEvent('open-new-folder'));
+          } else {
+            setEditingLink(null);
+            setIsLinkModalOpen(true);
+          }
+        } else if (e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          setIsCommandPaletteOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
-
-
 
   // Persist helper
   const persistData = async (newData: HubData) => {
@@ -157,6 +177,11 @@ export default function HomePage() {
   // Keyboard Navigation (Vim-style)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Do not hijack system combos like Ctrl+L or Cmd+R
+      if (e.ctrlKey || e.metaKey || e.altKey) {
+        return;
+      }
+
       const activeEl = document.activeElement;
       const isInputFocused = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA' || activeEl?.tagName === 'SELECT';
 
@@ -175,13 +200,6 @@ export default function HomePage() {
           setIsShortcutsModalOpen(false);
           setIsCommandPaletteOpen(false);
         }
-        return;
-      }
-
-      // Open command palette with Cmd+K
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen(true);
         return;
       }
 

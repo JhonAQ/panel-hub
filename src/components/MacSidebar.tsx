@@ -52,6 +52,14 @@ export const MacSidebar: React.FC<MacSidebarProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const handleGlobalNewFolder = () => {
+      setIsCreatingFolder(true);
+    };
+    window.addEventListener('open-new-folder', handleGlobalNewFolder);
+    return () => window.removeEventListener('open-new-folder', handleGlobalNewFolder);
+  }, []);
+
+  useEffect(() => {
     if (isCreatingFolder || editingFolderId) {
       inputRef.current?.focus();
       inputRef.current?.select();

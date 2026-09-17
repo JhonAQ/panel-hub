@@ -84,6 +84,16 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
     }
   };
 
+  // Auto-fetch metadata on typing pause
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (url && !title && url.includes('.') && url.length > 5 && !linkToEdit) {
+        handleUrlBlur();
+      }
+    }, 800);
+    return () => clearTimeout(handler);
+  }, [url, title, linkToEdit]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim() || !title.trim()) return;
@@ -122,13 +132,13 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
             <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center bg-white/5 p-1.5 shrink-0 overflow-hidden">
               {getCleanIcon(iconType, "w-full h-full text-white/80", url)}
             </div>
-            <h2 className="text-sm font-semibold text-white">
-              {linkToEdit ? 'Editar recurso' : 'Nuevo recurso'}
+            <h2 className="text-lg font-bold text-white tracking-tight">
+              {linkToEdit ? 'Editar Enlace' : 'Añadir Nuevo Enlace'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-1.5 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -136,30 +146,29 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <div className="flex justify-between items-end mb-1.5">
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-indigo-300/80">
-                URL del enlace *
-              </label>
-              {!linkToEdit && url && (
-                <button 
-                  type="button" 
-                  onClick={() => handleUrlBlur()} 
-                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium bg-indigo-500/10 px-2 py-0.5 rounded flex items-center gap-1"
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-widest text-white/40">URL</label>
+              {!linkToEdit && (
+                <button
+                  type="button"
+                  onClick={() => handleUrlBlur()}
+                  disabled={isFetching || !url}
+                  className="text-[10px] uppercase tracking-wider text-white font-bold bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  {isFetching ? 'Buscando...' : '✨ Auto-completar'}
+                  {isFetching ? 'Buscando...' : 'Autocompletar'}
                 </button>
               )}
             </div>
             <input
-              type="text"
+              type="url"
               required
               autoFocus
-              placeholder="Ej: https://github.com/..."
+              placeholder="https://..."
               value={url}
               onChange={(e) => handleUrlChange(e.target.value)}
               onBlur={handleUrlBlur}
-              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] text-sm font-mono transition-all"
+              className="w-full px-4 py-3 bg-[#060814] border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-sm"
             />
           </div>
 

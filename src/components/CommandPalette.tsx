@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { HubLink, HubFolder } from '@/types';
-import { Search, ExternalLink, Folder, Plus, Star, Link as LinkIcon, Command } from 'lucide-react';
+import { Search, ExternalLink, Folder, Plus, Star, Link as LinkIcon, Command, Globe } from 'lucide-react';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -39,6 +39,30 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const items = useMemo(() => {
     const q = query.toLowerCase().trim();
     const result = [];
+
+    // Prefix commands
+    if (query.startsWith('g ') && query.length > 2) {
+      const searchQ = query.slice(2);
+      result.push({
+        type: 'action',
+        title: `Buscar en Google: ${searchQ}`,
+        subtitle: 'Abrir en nueva pestaña',
+        icon: <Search className="w-4 h-4 text-blue-400" />,
+        action: () => window.open(`https://google.com/search?q=${encodeURIComponent(searchQ)}`, '_blank')
+      });
+      return result; // Si estamos buscando en google, no mostramos lo demás
+    } else if (query.startsWith('u ') && query.length > 2) {
+      const targetUrl = query.slice(2);
+      const formattedUrl = targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`;
+      result.push({
+        type: 'action',
+        title: `Ir a URL: ${targetUrl}`,
+        subtitle: 'Abrir en la pestaña actual',
+        icon: <Globe className="w-4 h-4 text-emerald-400" />,
+        action: () => window.open(formattedUrl, '_self')
+      });
+      return result; // Igual para URL directa
+    }
 
     // 1. Actions
     const actions = [
