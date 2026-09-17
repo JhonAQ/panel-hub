@@ -32,7 +32,29 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     if (isOpen) {
       setQuery('');
       setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+
+      // Aggressive focus strategy to combat Brave/Chrome New Tab stealing focus
+      const forceFocus = () => {
+        if (inputRef.current && document.activeElement !== inputRef.current) {
+          inputRef.current.focus();
+        }
+      };
+
+      // Try immediately
+      forceFocus();
+
+      // Retry rapidly for 1.5 seconds
+      const interval = setInterval(forceFocus, 50);
+      const timeout = setTimeout(() => clearInterval(interval), 1500);
+
+      // Also grab focus if the user clicks back into the window
+      window.addEventListener('focus', forceFocus);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+        window.removeEventListener('focus', forceFocus);
+      };
     }
   }, [isOpen]);
 
