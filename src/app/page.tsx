@@ -28,8 +28,18 @@ import {
 const LOCAL_STORAGE_KEY = 'panelhub_data_cache';
 
 export default function HomePage() {
-  const [hubData, setHubData] = useState<HubData>(INITIAL_HUB_DATA);
-  const [loading, setLoading] = useState(true);
+  const [hubData, setHubData] = useState<HubData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch (e) {
+        console.error('Error parsing cached data', e);
+      }
+    }
+    return INITIAL_HUB_DATA;
+  });
+  const [loading, setLoading] = useState(false); // No loading state needed for instant render
   const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'error'>('synced');
   
   // Navigation & View state
@@ -363,7 +373,7 @@ export default function HomePage() {
   const activeFolder = selectedFolderId ? folderMap.get(selectedFolderId) : null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#060814] text-[#f3f4f6] relative">
+    <div suppressHydrationWarning className="flex h-screen w-screen overflow-hidden bg-[#060814] text-[#f3f4f6] relative">
       <div className="bg-glow-blobs" />
       
       {/* App Sidebar */}
