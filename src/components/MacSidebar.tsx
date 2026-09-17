@@ -105,26 +105,19 @@ export const MacSidebar: React.FC<MacSidebarProps> = ({
 
       {/* Global Search */}
       <div className="px-5 pb-4">
-        <div className="relative flex items-center group">
-          <Search className="w-4 h-4 text-white/30 absolute left-3 pointer-events-none group-focus-within:text-white/70 transition-colors" />
-          <input
-            type="text"
-            placeholder="Buscar enlaces..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] focus:bg-white/[0.08] text-sm text-white placeholder-white/30 border border-white/5 focus:border-white/20 focus:outline-none transition-all focus:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
-          />
-          {searchQuery ? (
-            <button
-              onClick={() => onSearchChange('')}
-              className="absolute right-3 text-white/40 hover:text-white text-sm"
-            >
-              ×
-            </button>
-          ) : (
-            <kbd className="absolute right-3 text-[10px] text-white/20 font-mono tracking-widest border border-white/10 px-1.5 py-0.5 rounded">⌘K</kbd>
-          )}
-        </div>
+        <button
+          onClick={() => {
+            const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true });
+            window.dispatchEvent(event);
+          }}
+          className="w-full relative flex items-center group cursor-pointer"
+        >
+          <Search className="w-4 h-4 text-white/30 absolute left-3 pointer-events-none group-hover:text-white/70 transition-colors" />
+          <div className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-white/[0.03] group-hover:bg-white/[0.05] text-sm text-white/30 text-left border border-white/5 group-hover:border-white/20 transition-all group-hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] flex items-center justify-between">
+            <span>Buscar o comandos...</span>
+            <kbd className="text-[10px] text-white/20 font-mono tracking-widest border border-white/10 px-1.5 py-0.5 rounded">⌘K</kbd>
+          </div>
+        </button>
       </div>
 
       {/* Navigation Tree */}

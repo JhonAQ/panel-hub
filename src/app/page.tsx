@@ -10,6 +10,7 @@ import { NewLinkModal } from '@/components/NewLinkModal';
 import { NewFolderModal } from '@/components/NewFolderModal';
 import { DataBackupModal } from '@/components/DataBackupModal';
 import { ShortcutsModal } from '@/components/ShortcutsModal';
+import { CommandPalette } from '@/components/CommandPalette';
 import { 
   Folder, 
   Plus, 
@@ -38,10 +39,10 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Modals state
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<HubLink | null>(null);
   const [editingFolder, setEditingFolder] = useState<HubFolder | null>(null);
 
@@ -166,13 +167,21 @@ export default function HomePage() {
         return;
       }
 
-      if (isLinkModalOpen || isFolderModalOpen || isBackupModalOpen || isShortcutsModalOpen) {
+      if (isLinkModalOpen || isFolderModalOpen || isBackupModalOpen || isShortcutsModalOpen || isCommandPaletteOpen) {
         if (e.key === 'Escape') {
           setIsLinkModalOpen(false);
           setIsFolderModalOpen(false);
           setIsBackupModalOpen(false);
           setIsShortcutsModalOpen(false);
+          setIsCommandPaletteOpen(false);
         }
+        return;
+      }
+
+      // Open command palette with Cmd+K
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
         return;
       }
 
@@ -226,8 +235,7 @@ export default function HomePage() {
           break;
         case '/':
           e.preventDefault();
-          const searchInput = document.querySelector<HTMLInputElement>('input[placeholder="Buscar enlaces..."]');
-          searchInput?.focus();
+          setIsCommandPaletteOpen(true);
           break;
         case '?':
           e.preventDefault();
@@ -543,6 +551,20 @@ export default function HomePage() {
       <ShortcutsModal 
         isOpen={isShortcutsModalOpen}
         onClose={() => setIsShortcutsModalOpen(false)}
+      />
+
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        links={hubData.links}
+        folders={hubData.folders}
+        onOpenLink={handleOpenLink}
+        onSelectFolder={(folderId) => handleSelectView('folder', folderId)}
+        onSelectView={handleSelectView}
+        onOpenNewLink={() => {
+          setEditingLink(null);
+          setIsLinkModalOpen(true);
+        }}
       />
     </div>
   );
