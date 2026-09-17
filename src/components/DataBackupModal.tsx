@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { HubData } from '@/types';
-import { Download, Upload, RefreshCw, X, ShieldCheck, Database, Check } from 'lucide-react';
+import { Download, Upload, RefreshCw, X, ShieldCheck, Database } from 'lucide-react';
 
 interface DataBackupModalProps {
   isOpen: boolean;
@@ -40,8 +40,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     downloadAnchor.click();
     downloadAnchor.remove();
 
-    setSuccessMsg('✓ Copia de seguridad exportada correctamente');
-    setTimeout(() => setSuccessMsg(null), 3000);
+    setSuccessMsg('Respaldo JSON descargado');
+    setTimeout(() => setSuccessMsg(null), 2500);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,8 +55,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         const parsed = JSON.parse(content) as HubData;
         if (Array.isArray(parsed.folders) && Array.isArray(parsed.links)) {
           onImportData(parsed);
-          setSuccessMsg('✓ Datos importados exitosamente');
-          setTimeout(() => setSuccessMsg(null), 3000);
+          setSuccessMsg('Datos importados correctamente');
+          setTimeout(() => setSuccessMsg(null), 2500);
         } else {
           alert('El archivo no tiene el formato válido de PanelHub.');
         }
@@ -68,77 +68,53 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div 
-        className="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl relative"
+        className="w-full max-w-sm bg-[#16161a] rounded-2xl p-6 border border-white/10 shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">
-                Sincronización y Respaldo
-              </h2>
-              <p className="text-xs text-slate-400 font-mono">
-                Portabilidad entre dispositivos y copias
-              </p>
-            </div>
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-white/70" />
+            <h2 className="text-sm font-semibold text-white">
+              Sincronización y Respaldo
+            </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1 rounded-md text-white/40 hover:text-white hover:bg-white/5 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Sync Status Banner */}
-        <div className="mb-6 p-4 rounded-2xl bg-black/40 border border-white/10 flex items-center gap-3">
-          <ShieldCheck className={`w-6 h-6 ${syncStatus === 'synced' ? 'text-emerald-400' : 'text-amber-400'}`} />
-          <div>
-            <div className="text-xs font-mono uppercase tracking-wider text-white">
-              {syncStatus === 'synced' ? 'Servidor Conectado y Sincronizado' : 'Guardando cambios...'}
-            </div>
-            <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-              Tus enlaces quedan guardados en el servidor para abrirlos desde cualquier PC o móvil.
-            </div>
+        <div className="mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-2.5">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${syncStatus === 'synced' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+          <div className="text-xs text-white/70">
+            {syncStatus === 'synced' ? 'Sincronizado con el servidor' : 'Guardando cambios...'}
           </div>
         </div>
 
-        {/* Action cards */}
-        <div className="space-y-3">
-          {/* Export button */}
+        {/* Action list */}
+        <div className="space-y-2">
           <button
             onClick={handleExport}
-            className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-cyan-400/50 transition-all text-left group cursor-pointer"
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 transition-colors text-left cursor-pointer"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 group-hover:scale-105 transition-transform">
-                <Download className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-white block">Descargar Respaldo JSON</span>
-                <span className="text-xs text-slate-400 font-mono">Guarda tus links en un archivo local</span>
-              </div>
+            <div className="flex items-center gap-2.5">
+              <Download className="w-4 h-4 text-white/60" />
+              <span className="text-xs text-white/90">Descargar copia de seguridad (.json)</span>
             </div>
           </button>
 
-          {/* Import button */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-emerald-400/50 transition-all text-left group cursor-pointer"
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 transition-colors text-left cursor-pointer"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 group-hover:scale-105 transition-transform">
-                <Upload className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-white block">Importar desde Archivo JSON</span>
-                <span className="text-xs text-slate-400 font-mono">Restaura enlaces de otra máquina</span>
-              </div>
+            <div className="flex items-center gap-2.5">
+              <Upload className="w-4 h-4 text-white/60" />
+              <span className="text-xs text-white/90">Restaurar desde archivo JSON</span>
             </div>
           </button>
           <input
@@ -149,40 +125,33 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             className="hidden"
           />
 
-          {/* Reset button */}
           <button
             onClick={() => {
-              if (confirm('¿Restablecer PanelHub con los accesos y categorías iniciales?')) {
+              if (confirm('¿Restablecer los datos demo iniciales?')) {
                 onResetData();
-                setSuccessMsg('✓ Se restableció la configuración base');
-                setTimeout(() => setSuccessMsg(null), 3000);
+                setSuccessMsg('Datos restablecidos');
+                setTimeout(() => setSuccessMsg(null), 2500);
               }
             }}
-            className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/30 transition-all text-left group cursor-pointer"
+            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-rose-500/10 text-white/40 hover:text-rose-300 transition-colors text-left cursor-pointer"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                <RefreshCw className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-sm font-bold text-slate-300 group-hover:text-rose-300 block">Restablecer Ejemplos Demo</span>
-                <span className="text-xs text-slate-500 font-mono">Vuelve a la colección por defecto</span>
-              </div>
+            <div className="flex items-center gap-2.5">
+              <RefreshCw className="w-4 h-4" />
+              <span className="text-xs">Restablecer ejemplos</span>
             </div>
           </button>
         </div>
 
-        {/* Feedback message */}
         {successMsg && (
-          <div className="mt-4 p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono text-center animate-in fade-in">
+          <div className="mt-3 p-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs text-center">
             {successMsg}
           </div>
         )}
 
-        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end">
+        <div className="mt-5 pt-3 border-t border-white/5 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs text-white/60 hover:text-white transition-colors cursor-pointer"
           >
             Cerrar
           </button>

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HubLink, HubFolder, IconType, AccentColor } from '@/types';
-import { detectIconAndThemeFromUrl, getLinkIcon } from '@/lib/icons';
-import { X, Sparkles, Plus, Check } from 'lucide-react';
+import { HubLink, HubFolder, IconType } from '@/types';
+import { detectIconFromUrl, getCleanIcon } from '@/lib/icons';
+import { X, Check, Globe } from 'lucide-react';
 
 interface NewLinkModalProps {
   isOpen: boolean;
@@ -13,30 +13,6 @@ interface NewLinkModalProps {
   defaultFolderId?: string;
   linkToEdit?: HubLink | null;
 }
-
-const AVAILABLE_ICONS: { type: IconType; label: string }[] = [
-  { type: 'github', label: 'GitHub' },
-  { type: 'drive', label: 'Drive' },
-  { type: 'docs', label: 'Documentos' },
-  { type: 'vercel', label: 'Vercel / Cloud' },
-  { type: 'database', label: 'Database / SQL' },
-  { type: 'figma', label: 'Figma' },
-  { type: 'notion', label: 'Notion' },
-  { type: 'youtube', label: 'YouTube' },
-  { type: 'server', label: 'Servidor' },
-  { type: 'terminal', label: 'Terminal / Dev' },
-  { type: 'chat', label: 'Chat / Red' },
-  { type: 'generic', label: 'Web Genérica' },
-];
-
-const AVAILABLE_COLORS: { color: AccentColor; label: string; bg: string }[] = [
-  { color: 'cyan', label: 'Cian Neón', bg: 'bg-cyan-500' },
-  { color: 'emerald', label: 'Esmeralda', bg: 'bg-emerald-500' },
-  { color: 'amber', label: 'Ámbar', bg: 'bg-amber-500' },
-  { color: 'violet', label: 'Violeta', bg: 'bg-violet-500' },
-  { color: 'rose', label: 'Rosa Neón', bg: 'bg-rose-500' },
-  { color: 'slate', label: 'Grafito', bg: 'bg-slate-500' },
-];
 
 export const NewLinkModal: React.FC<NewLinkModalProps> = ({
   isOpen,
@@ -51,10 +27,7 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
   const [description, setDescription] = useState('');
   const [folderId, setFolderId] = useState(defaultFolderId || (folders[0]?.id ?? ''));
   const [iconType, setIconType] = useState<IconType>('generic');
-  const [colorTheme, setColorTheme] = useState<AccentColor>('cyan');
-  const [tagsInput, setTagsInput] = useState('');
   const [isPinned, setIsPinned] = useState(false);
-  const [autoDetected, setAutoDetected] = useState(false);
 
   useEffect(() => {
     if (linkToEdit) {
@@ -63,8 +36,6 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
       setDescription(linkToEdit.description || '');
       setFolderId(linkToEdit.folderId);
       setIconType(linkToEdit.iconType);
-      setColorTheme(linkToEdit.colorTheme);
-      setTagsInput(linkToEdit.tags?.join(', ') || '');
       setIsPinned(!!linkToEdit.isPinned);
     } else {
       setTitle('');
@@ -72,10 +43,7 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
       setDescription('');
       setFolderId(defaultFolderId || (folders[0]?.id ?? ''));
       setIconType('generic');
-      setColorTheme('cyan');
-      setTagsInput('');
       setIsPinned(false);
-      setAutoDetected(false);
     }
   }, [linkToEdit, isOpen, defaultFolderId, folders]);
 
@@ -85,12 +53,10 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
     setUrl(newUrl);
 
     if (!linkToEdit && newUrl.trim().length > 3) {
-      const { icon, theme } = detectIconAndThemeFromUrl(newUrl);
-      setIconType(icon);
-      setColorTheme(theme);
-      setAutoDetected(true);
+      const detected = detectIconFromUrl(newUrl);
+      setIconType(detected);
 
-      // Suggest title if empty
+      // Auto suggest title if empty
       if (!title) {
         try {
           if (newUrl.includes('github.com/')) {
@@ -115,11 +81,6 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
       formattedUrl = `https://${formattedUrl}`;
     }
 
-    const tags = tagsInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
-
     onSave({
       id: linkToEdit?.id,
       title: title.trim(),
@@ -127,8 +88,8 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
       description: description.trim(),
       folderId: folderId || folders[0]?.id || 'general',
       iconType,
-      colorTheme,
-      tags,
+      colorTheme: 'cyan',
+      tags: [],
       isPinned,
     });
 
@@ -136,196 +97,116 @@ export const NewLinkModal: React.FC<NewLinkModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div 
-        className="w-full max-w-xl glass-panel rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl relative max-h-[92vh] overflow-y-auto"
+        className="w-full max-w-md bg-[#16161a] rounded-2xl p-6 border border-white/10 shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-              {getLinkIcon(iconType, 'w-5 h-5')}
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="text-white/80">
+              {getCleanIcon(iconType, "w-5 h-5")}
             </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">
-                {linkToEdit ? 'Editar Recurso' : 'Nuevo Enlace o Recurso'}
-              </h2>
-              <p className="text-xs text-slate-400 font-mono">
-                Agrega accesos directos visibles en todos tus dispositivos
-              </p>
-            </div>
+            <h2 className="text-sm font-semibold text-white">
+              {linkToEdit ? 'Editar recurso' : 'Nuevo recurso'}
+            </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1 rounded-md text-white/40 hover:text-white hover:bg-white/5 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* URL Input with smart detector */}
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-mono uppercase tracking-wider text-slate-300">
-                Dirección URL o Link *
-              </label>
-              {autoDetected && (
-                <span className="flex items-center gap-1 text-[11px] font-mono text-cyan-400 animate-pulse">
-                  <Sparkles className="w-3 h-3" /> Tipo e ícono auto-detectados
-                </span>
-              )}
-            </div>
+            <label className="block text-[11px] font-medium text-white/50 mb-1">
+              URL del enlace *
+            </label>
             <input
               type="text"
               required
-              placeholder="https://github.com/usuario/proyecto o https://drive.google.com/..."
+              autoFocus
+              placeholder="https://github.com/... o https://drive.google.com/..."
               value={url}
               onChange={(e) => handleUrlChange(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/15 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono text-sm transition-all"
+              className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-xs font-mono transition-colors"
             />
           </div>
 
-          {/* Title Input */}
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-1.5">
-              Título del Botón *
+            <label className="block text-[11px] font-medium text-white/50 mb-1">
+              Nombre o Título *
             </label>
             <input
               type="text"
               required
-              placeholder="Ej: Repositorio Principal, Drive de Contabilidad, Figma UI Kit..."
+              placeholder="Ej: Repositorio Principal, Drive Contabilidad..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/15 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-sm transition-all"
+              className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-xs transition-colors"
             />
           </div>
 
-          {/* Description */}
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-1.5">
-              Descripción Corta (Opcional)
-            </label>
-            <input
-              type="text"
-              placeholder="Breve nota sobre qué contiene o para qué sirve este acceso..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/15 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-sm transition-all"
-            />
-          </div>
-
-          {/* Folder / Category Selection */}
-          <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-1.5">
-              Carpeta o Grupo *
+            <label className="block text-[11px] font-medium text-white/50 mb-1">
+              Carpeta
             </label>
             <select
               value={folderId}
               onChange={(e) => setFolderId(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-black/60 border border-white/15 text-white focus:outline-none focus:border-cyan-400 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-[#111114] border border-white/10 text-white focus:outline-none focus:border-white/30 text-xs"
             >
               {folders.map((f) => (
-                <option key={f.id} value={f.id} className="bg-slate-900 text-white">
+                <option key={f.id} value={f.id} className="bg-[#111114] text-white">
                   📁 {f.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Icon Selection */}
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-2">
-              Ícono del Botón
+            <label className="block text-[11px] font-medium text-white/50 mb-1">
+              Nota o descripción (opcional)
             </label>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-              {AVAILABLE_ICONS.map((item) => (
-                <button
-                  type="button"
-                  key={item.type}
-                  onClick={() => setIconType(item.type)}
-                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                    iconType === item.type
-                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                      : 'bg-black/30 border-white/10 text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {getLinkIcon(item.type, 'w-5 h-5')}
-                  <span className="text-[10px] font-mono truncate max-w-full">{item.label}</span>
-                </button>
-              ))}
-            </div>
+            <input
+              type="text"
+              placeholder="Detalle breve..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-xs transition-colors"
+            />
           </div>
 
-          {/* Color theme selector */}
-          <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-2">
-              Acento de Color Brutalista
-            </label>
-            <div className="flex flex-wrap gap-2.5">
-              {AVAILABLE_COLORS.map((c) => (
-                <button
-                  type="button"
-                  key={c.color}
-                  onClick={() => setColorTheme(c.color)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono border transition-all cursor-pointer ${
-                    colorTheme === c.color
-                      ? 'border-white text-white shadow-md bg-white/10'
-                      : 'border-white/10 text-slate-400 hover:text-white bg-black/40'
-                  }`}
-                >
-                  <span className={`w-3 h-3 rounded-full ${c.bg}`} />
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tags & Pin Toggle */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-1.5">
-                Etiquetas / Tags (Separadas por comas)
-              </label>
+          <div className="pt-1">
+            <label className="flex items-center gap-2 text-xs text-white/70 cursor-pointer select-none">
               <input
-                type="text"
-                placeholder="github, frontend, prod, docs"
-                value={tagsInput}
-                onChange={(e) => setTagsInput(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/15 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono text-xs"
+                type="checkbox"
+                checked={isPinned}
+                onChange={(e) => setIsPinned(e.target.checked)}
+                className="w-3.5 h-3.5 rounded bg-black/40 border-white/20 text-blue-500 focus:ring-0"
               />
-            </div>
-
-            <div className="flex items-center gap-3 self-end pb-2">
-              <label className="flex items-center gap-2.5 text-xs font-mono uppercase tracking-wider text-slate-300 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isPinned}
-                  onChange={(e) => setIsPinned(e.target.checked)}
-                  className="w-4 h-4 rounded bg-black/40 border-white/20 text-cyan-500 focus:ring-0 cursor-pointer"
-                />
-                <span>⭐ Fijar en Favoritos</span>
-              </label>
-            </div>
+              <span>Fijar en Favoritos</span>
+            </label>
           </div>
 
-          {/* Footer Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-6 border-t border-white/10 mt-6">
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/5">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs text-white/60 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider text-black bg-cyan-400 hover:bg-cyan-300 font-bold shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all cursor-pointer"
+              className="px-4 py-1.5 rounded-lg text-xs font-medium text-black bg-white hover:bg-white/90 transition-colors cursor-pointer"
             >
-              <Check className="w-4 h-4" />
-              <span>{linkToEdit ? 'Guardar Cambios' : 'Publicar Enlace'}</span>
+              {linkToEdit ? 'Guardar' : 'Agregar'}
             </button>
           </div>
         </form>
